@@ -6,6 +6,7 @@ const Projects = require('./projectModel')
 const router = express.Router()
 
 //***MIDDLEWARE***
+//validate id
 function validateId(req, res, next) {
     const { id } = req.params
     Projects.get(id)
@@ -22,6 +23,7 @@ function validateId(req, res, next) {
         })
 }
 
+//validate project
 function validateProject(req, res, next) {
     const { body } = req
     const { name, description } = req.body
@@ -58,13 +60,24 @@ router.get('/:id', [validateId], (req, res) => {
 router.post('/', [validateProject], (req, res, next) => {
     Projects.insert(req.body)
         .then(project => {
-            res.status(200).json(project)
+            res.status(201).json(project)
         })
         .catch(err => {
             next({ code: 500, message: 'Error creating project', error: err })
         })
 })
 
+// [ PUT ]
+//put project
+router.put('/:id', [validateId, validateProject], (req, res, next) => {
+    Projects.update(req.params.id, req.body)
+        .then(project => {
+            res.status(201).json(project)
+        })
+        .catch(err => {
+            next({ code: 500, message: 'Error updating project', error: err })
+        })
+})
 
 //***ERROR HANDLER***
 router.use((err, req, res, next) => {
