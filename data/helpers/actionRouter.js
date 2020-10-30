@@ -1,13 +1,14 @@
 //***IMPORTS***
 const express = require('express')
 const Actions = require('./actionModel')
+const Projects = require('./projectModel')
 
 //***ROUTER***
 const router = express.Router()
 
 //***MIDDLEWARE***
-//validate id
-function validateId(req, res, next) {
+//validate action id
+function validateActionId(req, res, next) {
     const { id } = req.params
     Actions.get(id)
         .then(action => {
@@ -15,7 +16,7 @@ function validateId(req, res, next) {
                 req.action = action
                 next()
             } else {
-                next({ code: 404, message: `Project with ID ${id} not found` })
+                next({ code: 404, message: `Action with ID ${id} not found` })
             }
         })
         .catch(err => {
@@ -23,64 +24,63 @@ function validateId(req, res, next) {
         })
 }
 
+//valide project id
+function validateProjectId(req, res, next) {
+    Projects.get(3)
+        .then(project => {
+            if (project) {
+                req.project = project
+                next()
+            } else {
+                next({ code: 404, message: `Project with ID ${id} not found` })
+            }
+        })
+        .catch(err => {
+            next({ code: 500, message: 'Error getting project', error: err })
+        })
+}
+
 //validate action
-function validateProject(req, res, next) {
+function validateAction(req, res, next) {
     const { body } = req
-    const { name, description } = req.body
+    const { project_id, description, notes } = req.body
     if (Object.keys(body).length === 0 || !body) {
         next({ code: 400, message: 'Missing action data' })
-    } else if (!name || !description) {
-        next({ code: 400, message: 'Missing name or description field' })
+    } else if (!project_id || !description || !notes) {
+        next({ code: 400, message: 'Missing id, description or notes field' })
     } else {
-        req.body = { name: req.body.name, description: req.body.description, completed: req.body.completed }
+        req.body = { user_id: req.body.user_id, description: req.body.description, notes: req.body.notes, completed: req.body.completed }
         next()
     }
 }
 
 //***ROUTE HANDLERS***
 // [ GET ]
-//get projects
+//get actions
 router.get('/', (req, res, next) => {
     Actions.get()
-        .then(projects => {
-            res.status(200).json(projects)
-        })
-        .catch(err => {
-            next({ code: 500, message: 'Error getting projects', error: err })
-        })
-})
-
-//get action by id
-router.get('/:id', [validateId], (req, res) => {
-    res.status(200).json(req.action)
-})
-
-//get action actions by id
-router.get('/:id/actions', [validateId], (req, res) => {
-    Actions.getProjectActions(req.params.id)
         .then(actions => {
             res.status(200).json(actions)
         })
         .catch(err => {
-            next({ code: 500, message: 'Error getting action actions', error: err })
+            next({ code: 500, message: 'Error getting actions', error: err })
         })
+})
+
+//get action by id
+router.get('/:id', [validateActionId], (req, res) => {
+    res.status(200).json(req.action)
 })
 
 // [ POST ]
 //post action
-router.post('/', [validateProject], (req, res, next) => {
-    Actions.insert(req.body)
-        .then(action => {
-            res.status(201).json(action)
-        })
-        .catch(err => {
-            next({ code: 500, message: 'Error creating action', error: err })
-        })
+router.post('/', [validateProjectId, validateAction], (req, res, next) => {
+    res.send('made it to send')
 })
 
 // [ PUT ]
 //update action by id
-router.put('/:id', [validateId, validateProject], (req, res, next) => {
+router.put('/:id', [validateActionId, validateAction], (req, res, next) => {
     Actions.update(req.params.id, req.body)
         .then(action => {
             res.status(201).json(action)
@@ -92,7 +92,7 @@ router.put('/:id', [validateId, validateProject], (req, res, next) => {
 
 // [ DELETE ]
 //delete action by id
-router.delete('/:id', [validateId], (req, res, next) => {
+router.delete('/:id', [validateActionId], (req, res, next) => {
     Actions.remove(req.params.id)
       .then(action => {
         res.status(200).json({ itemsDeleted: action })
