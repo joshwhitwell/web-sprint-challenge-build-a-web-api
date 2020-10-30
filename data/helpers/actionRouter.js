@@ -26,13 +26,13 @@ function validateActionId(req, res, next) {
 
 //valide project id
 function validateProjectId(req, res, next) {
-    Projects.get(3)
+    const { project_id } = req.body
+    Projects.get(project_id)
         .then(project => {
-            if (project) {
-                req.project = project
-                next()
+            if (!project) {
+                next({ code: 404, message: `Project with ID ${project_id} not found` })
             } else {
-                next({ code: 404, message: `Project with ID ${id} not found` })
+                next()
             }
         })
         .catch(err => {
@@ -47,9 +47,9 @@ function validateAction(req, res, next) {
     if (Object.keys(body).length === 0 || !body) {
         next({ code: 400, message: 'Missing action data' })
     } else if (!project_id || !description || !notes) {
-        next({ code: 400, message: 'Missing id, description or notes field' })
+        next({ code: 400, message: 'Missing id, description, or notes field' })
     } else {
-        req.body = { user_id: req.body.user_id, description: req.body.description, notes: req.body.notes, completed: req.body.completed }
+        req.body = { project_id: req.body.project_id, description: req.body.description, notes: req.body.notes, completed: req.body.completed }
         next()
     }
 }
@@ -75,12 +75,19 @@ router.get('/:id', [validateActionId], (req, res) => {
 // [ POST ]
 //post action
 router.post('/', [validateProjectId, validateAction], (req, res, next) => {
-    res.send('made it to send')
+    console.log(req.body)
+    Actions.insert(req.body)
+        .then(action => {
+            res.status(201).json(action)
+        })
+        .catch(err => {
+            next({ code: 500, message: 'Error creating action', error: err })
+        })
 })
 
 // [ PUT ]
 //update action by id
-router.put('/:id', [validateActionId, validateAction], (req, res, next) => {
+router.put('/:id', [validateActionId, validateProjectId, validateAction], (req, res, next) => {
     Actions.update(req.params.id, req.body)
         .then(action => {
             res.status(201).json(action)
