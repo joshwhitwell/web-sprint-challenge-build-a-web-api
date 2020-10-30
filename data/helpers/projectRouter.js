@@ -68,7 +68,7 @@ router.post('/', [validateProject], (req, res, next) => {
 })
 
 // [ PUT ]
-//put project
+//update project
 router.put('/:id', [validateId, validateProject], (req, res, next) => {
     Projects.update(req.params.id, req.body)
         .then(project => {
@@ -78,6 +78,18 @@ router.put('/:id', [validateId, validateProject], (req, res, next) => {
             next({ code: 500, message: 'Error updating project', error: err })
         })
 })
+
+// [ DELETE ]
+//delete project
+router.delete('/:id', [validateId], (req, res, next) => {
+    Projects.remove(req.params.id)
+      .then(project => {
+        res.status(200).json({ itemsDeleted: project })
+      })
+      .catch((err) => {
+        next({ code: 500, message: 'Error deleting project', err })
+      })
+  });
 
 //***ERROR HANDLER***
 router.use((err, req, res, next) => {
